@@ -2,6 +2,7 @@
   "name": "udacity-front-end-nd-project-5",
   "version": "1.0.0",
   "description": "Project 5 for Udacity's Front End Nanodegree",
+  "main": "js/app.js",
   "dependencies": {},
   "devDependencies": {
     "gulp": "^3.9.0",
