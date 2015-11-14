@@ -13,18 +13,18 @@
 <body>
 <div id="page" class="page">
 	<div class="places-ui">
-		<div id="search"><input data-bind="textInput: searchTerm" /></div>
-		<div id="places">
+		<div class="search"><input id="search" data-bind="textInput: searchTerm" /></div>
+		<div class="places">
 			<ul id="places-list" data-bind="foreach: places">
 				<li data-bind="text: placeName, visible: visible, css: {selected:selected}, click: $parent.selectPlace"></li>
 			</ul>
 		</div>
 	</div>
-	<div id="map"></div>
+	<div class="map" id="map"></div>
 </div>
 
 <script src="js/app.js"></script>
-<script async defer src="https://maps.googleapis.com/maps/api/js?libraries=places&callback=stripVM.init"></script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?libraries=places&callback=dragVM.init"></script>
 <!--<script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap"></script>-->
 </body>
 </html>

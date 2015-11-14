@@ -1,5 +1,6 @@
 /* General TODOs:
  *    Show place data on selection
+ *    Add No Results message if search does not match any items
  *    Implement localstorage to cache data and store favorites etc.
  *    Implement request fail handling for Google API requests
  *    Find a way to style markers for more than just selection (Udacity stretch goal)
@@ -163,11 +164,10 @@ var viewModel = function() {
 		currentPlace = self.selectedPlace();
 		if (currentPlace != place.id) {
 			self.selectedPlace(place.id);
-			console.log(self.selectedPlace());
 		}
 	}
 }
 
 
 
-stripVM = new viewModel();
+dragVM = new viewModel();

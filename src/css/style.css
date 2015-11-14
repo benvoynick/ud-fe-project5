@@ -24,11 +24,16 @@ html, body {
 	z-index: 100;
 }
 
-#search {
-	
+.search {
+	padding: 5px 10px;
 }
 
-#places {
+#search {
+	margin: 0 auto;
+	width: 100%;
+}
+
+.places {
 	height: auto;
 	max-height: 100%;
 	overflow-x: hidden;
@@ -36,11 +41,24 @@ html, body {
 	width: 100%;
 }
 
-#places-list .selected {
-	color: red;
+#places-list {
+	list-style-position: inside;
+	list-style-type: none;
+	padding: 0 20px;
 }
 
-#map {
+#places-list li {
+	cursor: pointer;
+	margin: 5px 0;
+	padding: 5px 0;
+}
+
+#places-list .selected {
+	color: red;
+	cursor: default;
+}
+
+.map {
 	height: 100%;
 	padding: 50px 0 0 0;
 	width: 100%;
@@ -57,7 +75,7 @@ html, body {
 		width: 250px;
 	}
 
-	#map {
+	.map {
 		padding: 0 0 0 50px;
 	}
 }
