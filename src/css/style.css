@@ -10,6 +10,54 @@ html, body {
 	padding: 0;
 }
 
+#page {
+	height: 100%;
+	width: 100%;
+}
+
+.places-ui {
+	background-color: white;
+	height: 200px;
+	overflow: visible;
+	position: fixed;
+	width: 100%;
+	z-index: 100;
+}
+
+#search {
+	
+}
+
+#places {
+	height: auto;
+	max-height: 100%;
+	overflow-x: hidden;
+	overflow-y: auto;
+	width: 100%;
+}
+
+#places-list .selected {
+	color: red;
+}
+
 #map {
 	height: 100%;
+	padding: 50px 0 0 0;
+	width: 100%;
+	z-index: 10;
+}
+
+@media (min-width: 700px) {
+	#page {
+
+	}
+
+	.places-ui {
+		height: 100%;
+		width: 250px;
+	}
+
+	#map {
+		padding: 0 0 0 50px;
+	}
 }
