@@ -1,6 +1,4 @@
 /* General TODOs:
- *    Show place data on selection
- *    Add No Results message if search does not match any items
  *    Implement localstorage to cache data and store favorites etc.
  *    Implement request fail handling for Google API requests
  *    Find a way to style markers for more than just selection (Udacity stretch goal)
@@ -12,6 +10,8 @@
  *    Keyboard shortcuts for search (Udacity stretch goal)
  *    Search other fields with search (Udacity stretch goal)
  *    Autocomplete for search?
+ *    Minimum rating filter?
+ *    Add No Results message if search does not match any items
  *    Save places to Google Maps from this page?
  */
 
@@ -62,6 +62,15 @@ var viewModel = function() {
 	};
 
 	this.decorateModelPlaceData = function(data) {
+		//console.log(data);
+
+		var popupContent = '<div class="gm-info-popup">' +
+			'<div class="gm-info-popup--title">' + data.placeName + '</div>' +
+			'<div class="gm-info-popup--google-data">';
+				if (data.googleData.rating) popupContent += '<span class="rating">Google Maps Rating: ' + data.googleData.rating.toFixed(1); + '</span>';
+			popupContent += '</div>' +
+		'</div>';
+
 		data.selected = ko.pureComputed(function() {
 			if (data.id == self.selectedPlace()) return true;
 			else return false;
@@ -89,8 +98,24 @@ var viewModel = function() {
 			self.selectedPlace(this.place.placeId);
 		});
 
+		data.googleInfoWindow = new google.maps.InfoWindow({
+			content: popupContent
+		});
+		data.googleInfoWindow.addListener('closeclick', function(event) {
+			self.selectedPlace(null);
+		})
+
 		data.visible.subscribe(function(visibility) {
 			data.googleMapMarker.setVisible(visibility);
+		});
+
+		data.selected.subscribe(function(selected) {
+			if (selected) {
+				data.googleInfoWindow.open(self.googleMap, data.googleMapMarker);
+			}
+			else {
+				data.googleInfoWindow.close();
+			}
 		});
 
 		return data;
@@ -120,8 +145,10 @@ var viewModel = function() {
 			else {
 				// Initializing data from Google
 				for (var i = 0; i < results.length; i++) {
-					var data = {'googleData': results[i]};
-					model.addPlace(results[i].id, data);
+					if (!results[i].permanently_closed) {
+						var data = {'googleData': results[i]};
+						model.addPlace(results[i].id, data);
+					}
 				}
 
 				self.populatePlaces();

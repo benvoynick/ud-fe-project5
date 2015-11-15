@@ -79,3 +79,9 @@ html, body {
 		padding: 0 0 0 50px;
 	}
 }
+
+.gm-info-popup--title {
+	font-weight: bold;
+	font-size: 150%;
+	margin-bottom: 5px;
+}
