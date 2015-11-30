@@ -1,11 +1,6 @@
 /* General TODOs:
- *    Implement localstorage to cache data and store favorites etc.
- *    Implement request fail handling for Google API requests
- *    Find a way to style markers for more than just selection (Udacity stretch goal)
- *    Animate place marker on selection (Udacity requirement)
- *    Get expanded data from Google Places when selected
+ *    Implement at least two other APIs for additional data (possibilities: Yelp, Instagram, Foursquare, Wikipedia), including request fail handling
  *    Implement "favorite" button for places
- *    Implement at least two other APIs for additional data (possibilities: Yelp, Instagram, Foursquare, Wikipedia), with request fail handling
  *    Implement paging of Google Place search results to show more places
  *    Keyboard shortcuts for search (Udacity stretch goal)
  *    Search other fields with search (Udacity stretch goal)
@@ -28,22 +23,79 @@ var model = {
 	'googleSearchTypes': ['bakery', 'bar', 'cafe', 'restaurant'],
 	'places': {},
 
-	addPlace: function(google_id, data) {
+	init: function() {
+		var storedPlaces = localStorage.getItem('dragMapPlaces');
+		if (storedPlaces) {
+			storedPlaces = JSON.parse(storedPlaces);
+			console.log('Stored data loaded');
+			console.log(storedPlaces);
+			console.log('end stored data');
+			this.places = storedPlaces;
+		}
+		else console.log('Nothing stored in localStorage');
+	},
+
+	saveData: function() {
+		var saveData = jQuery.extend(true, {}, this.places);
+		for (var aPlace in saveData) {
+			if (saveData.hasOwnProperty(aPlace)) {
+				delete saveData[aPlace].googleData;
+			}
+		}
+		console.log('Saving data');
+		//console.log(saveData);
+		localStorage.setItem('dragMapPlaces', JSON.stringify(saveData));
+	},
+
+	addPlace: function(google_id, name, data) {
 		if (this.places[google_id] !== undefined) return false;
 		if (data === undefined) data = {};
 
-		if(data.googleData.name) data.placeName = data.googleData.name;
+		if(name !== undefined) data.placeName = name;
 		else data.placeName = 'NONAME!';
 
 		data.id = google_id;
 
 		this.places[google_id] = data;
 
+		this.saveData();
+
 		return true;
 	},
 
-	updatePlaceData: function(id, data) {
-		// TODO: write function
+	updatePlace: function(id, data, overwrite) {
+		if (this.places[id] === undefined) return false;
+		if (overwrite === undefined) overwrite = false;
+
+		var changed = false;
+
+		for (var dataName in data) {
+			if (data.hasOwnProperty(dataName)) {
+				if (this.places[id].hasOwnProperty(dataName) && !overwrite) {
+					return 2;
+				}
+				else {
+					this.places[id][dataName] = data[dataName];
+					changed = true;
+				}
+			}
+		}
+
+		if (changed) this.saveData();
+
+		return true;
+	},
+	
+	checkUpdateDate: function(id, property, hours) {
+		if (hours === undefined) {
+			hours = 12;
+		}
+
+		var time_threshold = hours * 3600000;
+		var time_since_update = new Date() - this.places[id][property].receivedDate;
+
+		if (time_since_update > time_threshold) return true;
+		else return false;
 	}
 }
 
@@ -57,19 +109,18 @@ var viewModel = function() {
 	this.searchTerm = ko.observable('');
 
 	this.init = function() {
+		model.init();
 		this.initGoogleMap();
 		this.searchGooglePlaces();
 	};
 
-	this.decorateModelPlaceData = function(data) {
-		//console.log(data);
+	this.initView = function() {
+		self.populatePlaces();
+		ko.applyBindings(self);
+	};
 
-		var popupContent = '<div class="gm-info-popup">' +
-			'<div class="gm-info-popup--title">' + data.placeName + '</div>' +
-			'<div class="gm-info-popup--google-data">';
-				if (data.googleData.rating) popupContent += '<span class="rating">Google Maps Rating: ' + data.googleData.rating.toFixed(1); + '</span>';
-			popupContent += '</div>' +
-		'</div>';
+	this.decorateModelPlaceData = function(data) {
+		data = jQuery.extend(true, {}, data);
 
 		data.selected = ko.pureComputed(function() {
 			if (data.id == self.selectedPlace()) return true;
@@ -85,21 +136,32 @@ var viewModel = function() {
 			else return false;
 		});
 
+		if (data.googleData.opening_hours && data.googleData.opening_hours.open_now) data.openNow = ko.observable(true);
+		else data.openNow = ko.observable(false);
+		data.googleRating = ko.observable(false);
+		data.googleWebsite = ko.observable(false);
+		data.googleMapsURL = ko.observable(false);
+
 		var location = data.googleData.geometry.location;
 
-		data.googleMapMarker = new google.maps.Marker({
+		var mapMarkerOptions = {
 			map: self.googleMap,
-			//position: location,
-			place: {location: location, placeId: data.googleData.id},
+			place: {location: location, placeId: data.id},
 			title: data.placeName,
 			visible: data.visible()
-		});
+		};
+		if (!data.openNow()) {
+			mapMarkerOptions.icon = {size: new google.maps.Size(48, 48), url: 'img/blue_marker.png'};
+		}
+		
+		data.googleMapMarker = new google.maps.Marker(mapMarkerOptions);
+		
 		data.googleMapMarker.addListener('click', function(event) {
 			self.selectedPlace(this.place.placeId);
 		});
 
 		data.googleInfoWindow = new google.maps.InfoWindow({
-			content: popupContent
+			content: ''
 		});
 		data.googleInfoWindow.addListener('closeclick', function(event) {
 			self.selectedPlace(null);
@@ -111,14 +173,63 @@ var viewModel = function() {
 
 		data.selected.subscribe(function(selected) {
 			if (selected) {
+				//data.googleMapMarker.setIcon({fillOpacity: 1, path: google.maps.SymbolPath.FORWARD_OPEN_ARROW});
+				data.oldMapMarkerIcon = data.googleMapMarker.getIcon();
+				data.googleMapMarker.setIcon({size: new google.maps.Size(42, 42), url: 'img/marker_pin.png'});
+				data.googleMapMarker.setAnimation(google.maps.Animation.BOUNCE);
+				setTimeout(function() {
+					data.googleMapMarker.setAnimation(null);
+				}, 2100);
+				data.googleInfoWindow.setContent(jQuery('#iw-' + data.id).html());
 				data.googleInfoWindow.open(self.googleMap, data.googleMapMarker);
 			}
 			else {
+				data.googleMapMarker.setAnimation(null);
+				data.googleMapMarker.setIcon(data.oldMapMarkerIcon);
 				data.googleInfoWindow.close();
 			}
 		});
 
 		return data;
+	}
+
+	this.updatePlace = function(place_id) {
+		if (model.places[place_id]) {
+			// Call for detail update(s), unless data is recently cached
+			if (!model.places[place_id].googlePlaceData ||
+				model.checkUpdateDate(place_id, 'googlePlaceData')) {
+				self.detailGooglePlace(place_id);
+			}
+		}
+
+		places = self.places();
+
+		for (var p = 0; p <= places.length; p++) {
+			if (p == places.length) {
+				p = false;
+				break;
+			}
+			else if (places[p].id == place_id) {
+				break;
+			}
+		}
+
+		if (p !== false) {
+			if (model.places[place_id]) {
+				//console.log(model.places[place_id]);
+				var model_data = model.places[place_id];
+				if (model_data.googlePlaceData) {
+					if (model_data.googlePlaceData.rating) places[p].googleRating(model_data.googlePlaceData.rating.toFixed(1));
+					if (model_data.googlePlaceData.website) places[p].googleWebsite(model_data.googlePlaceData.website);
+					if (model_data.googlePlaceData.url) places[p].googleMapsURL(model_data.googlePlaceData.url);
+				}
+
+				places[p].googleInfoWindow.setContent(jQuery('#iw-' + places[p].id).html());   // Update popup window
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	this.populatePlaces = function() {
@@ -130,30 +241,63 @@ var viewModel = function() {
 			}
 		}
 		self.places(places_array);
-		ko.applyBindings(self);
 	};
 
-	this.parseGoogleSearchResults = function(results, status, pagination) {
-		// TODO: Page through additonal results, if present
-		//console.log(pagination);
+	this.parseGoogleDetailRequest = function(place, status) {
+		console.log('Got place response: ' + status);
 		if (status == google.maps.places.PlacesServiceStatus.OK) {
-			//console.log(results);
-			if (model.places.length > 0) {
-				// Updating data from Google
-				console.log('Update from google maps search');
+			var props_to_keep = ['place_id', 'formatted_address', 'formatted_phone_number', 'price_level', 'rating', 'url', 'website'];
+			var data = {};
+			for (var p = 0; p < props_to_keep.length; p++) {
+				if (place.hasOwnProperty(props_to_keep[p])) {
+					data[props_to_keep[p]] = place[props_to_keep[p]];
+				}
 			}
-			else {
-				// Initializing data from Google
-				for (var i = 0; i < results.length; i++) {
-					if (!results[i].permanently_closed) {
-						var data = {'googleData': results[i]};
-						model.addPlace(results[i].id, data);
+			//console.log(data);
+			data.dateReceived = new Date();
+			model.updatePlace(place.place_id, {googlePlaceData: data});
+			self.updatePlace(place.place_id);
+		}
+		else if (status == google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT) alert('Google maps data could not be loaded because this page has gone over its query limit. Please try again later.');
+		else if (status == google.maps.places.PlacesServiceStatus.INVALID_REQUEST) alert('ERROR: Google Maps received an invalid request.');
+		else if (status == google.maps.places.PlacesServiceStatus.ZERO_RESULTS) alert('ERROR: Google Maps did not find any restaurants.');
+		else if (status == google.maps.places.PlacesServiceStatus.UNKNOWN_ERROR) alert('ERROR: Google Maps encountered an unknown error.');
+		else alert('ERROR: Unknown status recevied from Google Maps');
+	}
+
+	this.parseGoogleSearchResults = function(results, status, pagination) {
+		if (status == google.maps.places.PlacesServiceStatus.OK) {
+			for (var i = 0; i < results.length; i++) {
+				if (!results[i].permanently_closed) {
+					var google_id = results[i].place_id;
+					var data = {'googleData': results[i]};
+					//console.log(results[i]);
+
+					if (model.places[google_id] === undefined) {
+						model.addPlace(google_id, results[i].name, data);
+					}
+					else {
+						// Update data, if it isn't already there
+						model.updatePlace(google_id, data, false);
 					}
 				}
-
-				self.populatePlaces();
 			}
 		}
+		else if (status == google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT) alert('Google maps data could not be loaded because this page has gone over its query limit. Please try again later.');
+		else if (status == google.maps.places.PlacesServiceStatus.INVALID_REQUEST) alert('ERROR: Google Maps received an invalid request.');
+		else if (status == google.maps.places.PlacesServiceStatus.ZERO_RESULTS) alert('ERROR: Google Maps did not find any restaurants.');
+		else if (status == google.maps.places.PlacesServiceStatus.UNKNOWN_ERROR) alert('ERROR: Google Maps encountered an unknown error.');
+		else alert('ERROR: Unknown status recevied from Google Maps');
+
+		// TODO: Page through additonal results, if present
+		/*
+		if (pagination) {
+			console.log(pagination);
+		}
+		else {
+		*/
+			self.initView();
+		//}
 	};
 
 	this.searchGooglePlaces = function() {
@@ -165,9 +309,15 @@ var viewModel = function() {
 			types: model.googleSearchTypes
 		};
 
-		var service = new google.maps.places.PlacesService(this.googleMap);
-		service.nearbySearch(request, this.parseGoogleSearchResults);
+		self.googlePlacesService.nearbySearch(request, this.parseGoogleSearchResults);
 	};
+	
+	this.detailGooglePlace = function(placeId) {
+		if (model.places.hasOwnProperty(placeId)) {
+			var request = {placeId: placeId};
+			self.googlePlacesService.getDetails(request, self.parseGoogleDetailRequest);
+		}
+	}
 
 	this.getGoogleMapCenterCoords = function() {
 		return [model.googleMapSettings.centerLat, model.googleMapSettings.centerLng];
@@ -185,12 +335,17 @@ var viewModel = function() {
 		};
 
 		this.googleMap = new google.maps.Map(document.getElementById('map'), google_map_init_settings);
+		this.googlePlacesService = new google.maps.places.PlacesService(this.googleMap);
 	};
 
 	this.selectPlace = function(place) {
 		currentPlace = self.selectedPlace();
 		if (currentPlace != place.id) {
+			self.updatePlace(place.id);
 			self.selectedPlace(place.id);
+		}
+		else {
+			self.selectedPlace(null);
 		}
 	}
 }

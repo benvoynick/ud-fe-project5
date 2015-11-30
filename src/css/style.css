@@ -48,9 +48,15 @@ html, body {
 }
 
 #places-list li {
+	background-color: #fff;
+	color: #666;
 	cursor: pointer;
 	margin: 5px 0;
 	padding: 5px 0;
+}
+
+#places-list .open {
+	color: #000;
 }
 
 #places-list .selected {
@@ -84,4 +90,13 @@ html, body {
 	font-weight: bold;
 	font-size: 150%;
 	margin-bottom: 5px;
+}
+
+.gm-info-popup--closed {
+	color: red;
+}
+
+.gm-info-popup--data {
+	display: block;
+	margin-top: 4px;
 }
