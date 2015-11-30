@@ -32,6 +32,15 @@
 			<span class="gm-info-popup--data rating" data-bind="text: 'Google Maps Rating: ' + googleRating(), visible: googleRating()"></span>
 			<a class="gm-info-popup--data google-maps-url" data-bind="attr: {href: googleMapsURL}, visible: googleWebsite()" target="_blank">Examine on Google Maps</a>
 		</div>
+		<div class="gm-info-popup--wikipedia-data" data-bind="visible: wikipediaArticles().length">
+			<div class="gm-info-popup--wikipedia-title">Wikipedia Articles</div>
+			<ul class="gm-info-popup--wikipedia-data--articles-ul" data-bind="foreach: wikipediaArticles">
+				<li>
+					<a class="gm-info-popup--wikipedia-data--article-link" data-bind="text: name, attr: {href: url}" target="_blank"></a>
+					<span class="gm-info-popup--wikipedia-data--article-excerpt" data-bind="text: excerpt"></span>
+				</li>
+			</ul>
+		</div>
 	</div>
 </div>
 

@@ -1,5 +1,5 @@
 /* General TODOs:
- *    Implement at least two other APIs for additional data (possibilities: Yelp, Instagram, Foursquare, Wikipedia), including request fail handling
+ *    Implement at least one other API for additional data (possibilities: Yelp, Instagram, Foursquare), including request fail handling
  *    Implement "favorite" button for places
  *    Implement paging of Google Place search results to show more places
  *    Keyboard shortcuts for search (Udacity stretch goal)
@@ -107,6 +107,8 @@ var viewModel = function() {
 	this.places = ko.observableArray();
 	this.selectedPlace = ko.observable(null);
 	this.searchTerm = ko.observable('');
+	this.pendingGooglePlaceRequests = [];
+	this.pendingWikipediaRequests = [];
 
 	this.init = function() {
 		model.init();
@@ -141,6 +143,7 @@ var viewModel = function() {
 		data.googleRating = ko.observable(false);
 		data.googleWebsite = ko.observable(false);
 		data.googleMapsURL = ko.observable(false);
+		data.wikipediaArticles = ko.observableArray();
 
 		var location = data.googleData.geometry.location;
 
@@ -196,9 +199,36 @@ var viewModel = function() {
 	this.updatePlace = function(place_id) {
 		if (model.places[place_id]) {
 			// Call for detail update(s), unless data is recently cached
-			if (!model.places[place_id].googlePlaceData ||
-				model.checkUpdateDate(place_id, 'googlePlaceData')) {
+			if (self.pendingGooglePlaceRequests.indexOf(place_id) === -1 &&
+				(!model.places[place_id].googlePlaceData ||
+				 model.checkUpdateDate(place_id, 'googlePlaceData')))
+			{
 				self.detailGooglePlace(place_id);
+			}
+			if (self.pendingWikipediaRequests.indexOf(place_id) === -1 &&
+				(!model.places[place_id].wikipediaData ||
+				 model.checkUpdateDate(place_id, 'wikipediaData')))
+			{
+				self.pendingWikipediaRequests.push(place_id);
+				//console.log('Updating ' + model.places[place_id].placeName + ' from WikiPedia');
+				var wikipedia_url = 'https://en.wikipedia.org/w/api.php';
+				var wikipedia_query_settings = {
+					data: 'action=opensearch&search=' + model.places[place_id].placeName + '&format=json',
+					dataType: 'jsonp'
+				};
+
+				$.ajax(wikipedia_url, wikipedia_query_settings).done(function(data, status, XHR) {
+					self.parseWikipediaRequest(data, status, XHR, place_id);
+				}).fail(function(XHR, status, error) {
+					alert('Connection to Wikipedia failed, please try again later.');
+
+					//console.log('Wikipedia failed request status and error:');
+					//console.log(status);
+					//console.log(error);
+
+					var pending_index = self.pendingWikipediaRequests.indexOf(place_id);
+					if (pending_index > -1) self.pendingWikipediaRequests.splice(pending_index, 1);
+				});
 			}
 		}
 
@@ -223,6 +253,12 @@ var viewModel = function() {
 					if (model_data.googlePlaceData.website) places[p].googleWebsite(model_data.googlePlaceData.website);
 					if (model_data.googlePlaceData.url) places[p].googleMapsURL(model_data.googlePlaceData.url);
 				}
+				if (model_data.wikipediaData) {
+					//console.log(model_data.wikipediaData);
+					if (model_data.wikipediaData.articles) {
+						places[p].wikipediaArticles(model_data.wikipediaData.articles);
+					}
+				}
 
 				places[p].googleInfoWindow.setContent(jQuery('#iw-' + places[p].id).html());   // Update popup window
 				return true;
@@ -243,9 +279,37 @@ var viewModel = function() {
 		self.places(places_array);
 	};
 
-	this.parseGoogleDetailRequest = function(place, status) {
-		console.log('Got place response: ' + status);
+	this.parseWikipediaRequest = function(data, status, XHR, place_id) {
+		//console.log('parsing Wikipedia response');
+		
+		if (data.error) {
+			alert('Wikipedia error: ' + data.error.code + "\n" +
+				  data.error.info);
+		}
+		else {
+			if (data.length) {
+				var names = data[1];
+				var excerpts = data[2];
+				var urls = data[3];
+			}
+			var articles = [];
+			for (var a = 0; a < names.length && a < 3; a++) {
+				articles[a] = ({name: names[a], excerpt: excerpts[a], url: urls[a]});
+			}
+			var model_data = {wikipediaData: {articles: articles, dateReceived: new Date()}};
+
+			model.updatePlace(place_id, model_data, true);
+			self.updatePlace(place_id);
+		}
+
+		var pending_index = self.pendingWikipediaRequests.indexOf(place_id);
+		if (pending_index > -1) self.pendingWikipediaRequests.splice(pending_index, 1);
+	}
+	
+	this.parseGoogleDetailRequest = function(place, status, placeId) {
+		//console.log('Got Google Maps Place response: ' + status);
 		if (status == google.maps.places.PlacesServiceStatus.OK) {
+			//console.log(place);
 			var props_to_keep = ['place_id', 'formatted_address', 'formatted_phone_number', 'price_level', 'rating', 'url', 'website'];
 			var data = {};
 			for (var p = 0; p < props_to_keep.length; p++) {
@@ -255,14 +319,17 @@ var viewModel = function() {
 			}
 			//console.log(data);
 			data.dateReceived = new Date();
-			model.updatePlace(place.place_id, {googlePlaceData: data});
-			self.updatePlace(place.place_id);
+			model.updatePlace(place.place_id, {googlePlaceData: data}, true);
+			self.updatePlace(placeId);
 		}
 		else if (status == google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT) alert('Google maps data could not be loaded because this page has gone over its query limit. Please try again later.');
 		else if (status == google.maps.places.PlacesServiceStatus.INVALID_REQUEST) alert('ERROR: Google Maps received an invalid request.');
 		else if (status == google.maps.places.PlacesServiceStatus.ZERO_RESULTS) alert('ERROR: Google Maps did not find any restaurants.');
 		else if (status == google.maps.places.PlacesServiceStatus.UNKNOWN_ERROR) alert('ERROR: Google Maps encountered an unknown error.');
 		else alert('ERROR: Unknown status recevied from Google Maps');
+
+		var pending_index = self.pendingGooglePlaceRequests.indexOf(placeId);
+		if (pending_index > -1) self.pendingGooglePlaceRequests.splice(pending_index, 1);
 	}
 
 	this.parseGoogleSearchResults = function(results, status, pagination) {
@@ -315,7 +382,9 @@ var viewModel = function() {
 	this.detailGooglePlace = function(placeId) {
 		if (model.places.hasOwnProperty(placeId)) {
 			var request = {placeId: placeId};
-			self.googlePlacesService.getDetails(request, self.parseGoogleDetailRequest);
+			self.googlePlacesService.getDetails(request, function(place, status) {
+				self.parseGoogleDetailRequest(place, status, placeId);
+			});
 		}
 	}
 

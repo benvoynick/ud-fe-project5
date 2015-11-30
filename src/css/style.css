@@ -100,3 +100,22 @@ html, body {
 	display: block;
 	margin-top: 4px;
 }
+
+.gm-info-popup--wikipedia-data {
+	margin: 10px 0;
+}
+
+.gm-info-popup--wikipedia-title {
+	font-size: 120%;
+}
+
+.gm-info-popup--wikipedia-data--articles-ul {
+	list-style-type: none;
+	list-style-position: inside;
+	margin: 0;
+	padding: 0;
+}
+
+.gm-info-popup--wikipedia-data--articles-ul li {
+	margin-bottom: 10px
+}
