@@ -86,6 +86,10 @@ html, body {
 	}
 }
 
+.info-windows {
+	display: none;
+}
+
 .gm-info-popup--title {
 	font-weight: bold;
 	font-size: 150%;
