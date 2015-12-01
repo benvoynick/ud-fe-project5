@@ -19,12 +19,8 @@ var model = {
 		var storedPlaces = localStorage.getItem('dragMapPlaces');
 		if (storedPlaces) {
 			storedPlaces = JSON.parse(storedPlaces);
-			console.log('Stored data loaded');
-			console.log(storedPlaces);
-			console.log('end stored data');
 			this.places = storedPlaces;
 		}
-		else console.log('Nothing stored in localStorage');
 	},
 
 	saveData: function() {
@@ -34,8 +30,6 @@ var model = {
 				delete saveData[aPlace].googleData;
 			}
 		}
-		console.log('Saving data');
-		//console.log(saveData);
 		localStorage.setItem('dragMapPlaces', JSON.stringify(saveData));
 	},
 
@@ -96,6 +90,7 @@ var model = {
 var viewModel = function() {
 	var self = this;
 
+	this.doneLoading = ko.observable(false);
 	this.places = ko.observableArray();
 	this.selectedPlace = ko.observable(null);
 	this.searchTerm = ko.observable('');
@@ -124,6 +119,8 @@ var viewModel = function() {
 			return visible;
 		});
 		ko.applyBindings(self);
+
+		self.doneLoading(true);
 	};
 
 	this.decorateModelPlaceData = function(data) {
@@ -215,7 +212,6 @@ var viewModel = function() {
 				 model.checkUpdateDate(place_id, 'wikipediaData')))
 			{
 				self.pendingWikipediaRequests.push(place_id);
-				//console.log('Updating ' + model.places[place_id].placeName + ' from WikiPedia');
 				var wikipedia_url = 'https://en.wikipedia.org/w/api.php';
 				var wikipedia_query_settings = {
 					data: 'action=opensearch&search=' + model.places[place_id].placeName + '&format=json',
@@ -226,10 +222,6 @@ var viewModel = function() {
 					self.parseWikipediaRequest(data, status, XHR, place_id);
 				}).fail(function(XHR, status, error) {
 					alert('Connection to Wikipedia failed, please try again later.');
-
-					//console.log('Wikipedia failed request status and error:');
-					//console.log(status);
-					//console.log(error);
 
 					var pending_index = self.pendingWikipediaRequests.indexOf(place_id);
 					if (pending_index > -1) self.pendingWikipediaRequests.splice(pending_index, 1);
@@ -251,7 +243,6 @@ var viewModel = function() {
 
 		if (p !== false) {
 			if (model.places[place_id]) {
-				//console.log(model.places[place_id]);
 				var model_data = model.places[place_id];
 				if (model_data.googlePlaceData) {
 					if (model_data.googlePlaceData.rating) places[p].googleRating(model_data.googlePlaceData.rating.toFixed(1));
@@ -259,7 +250,6 @@ var viewModel = function() {
 					if (model_data.googlePlaceData.url) places[p].googleMapsURL(model_data.googlePlaceData.url);
 				}
 				if (model_data.wikipediaData) {
-					//console.log(model_data.wikipediaData);
 					if (model_data.wikipediaData.articles) {
 						places[p].wikipediaArticles(model_data.wikipediaData.articles);
 					}
@@ -285,8 +275,6 @@ var viewModel = function() {
 	};
 
 	this.parseWikipediaRequest = function(data, status, XHR, place_id) {
-		//console.log('parsing Wikipedia response');
-		
 		if (data.error) {
 			alert('Wikipedia error: ' + data.error.code + "\n" +
 				  data.error.info);
@@ -312,9 +300,7 @@ var viewModel = function() {
 	}
 	
 	this.parseGoogleDetailRequest = function(place, status, placeId) {
-		//console.log('Got Google Maps Place response: ' + status);
 		if (status == google.maps.places.PlacesServiceStatus.OK) {
-			//console.log(place);
 			var props_to_keep = ['place_id', 'formatted_address', 'formatted_phone_number', 'price_level', 'rating', 'url', 'website'];
 			var data = {};
 			for (var p = 0; p < props_to_keep.length; p++) {
@@ -322,7 +308,6 @@ var viewModel = function() {
 					data[props_to_keep[p]] = place[props_to_keep[p]];
 				}
 			}
-			//console.log(data);
 			data.dateReceived = new Date();
 			model.updatePlace(place.place_id, {googlePlaceData: data}, true);
 			self.updatePlace(placeId);
@@ -343,7 +328,6 @@ var viewModel = function() {
 				if (!results[i].permanently_closed) {
 					var google_id = results[i].place_id;
 					var data = {'googleData': results[i]};
-					//console.log(results[i]);
 
 					if (model.places[google_id] === undefined) {
 						model.addPlace(google_id, results[i].name, data);
@@ -361,15 +345,13 @@ var viewModel = function() {
 		else if (status == google.maps.places.PlacesServiceStatus.UNKNOWN_ERROR) alert('ERROR: Google Maps encountered an unknown error.');
 		else alert('ERROR: Unknown status recevied from Google Maps');
 
-		// TODO: Page through additonal results, if present
-		/*
-		if (pagination) {
-			console.log(pagination);
+		// Page through additonal results if present, otherwise tell viewModel to finish initialization
+		if (pagination.hasNextPage) {
+			pagination.nextPage();
 		}
 		else {
-		*/
 			self.initView();
-		//}
+		}
 	};
 
 	this.searchGooglePlaces = function() {

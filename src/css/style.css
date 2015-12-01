@@ -10,6 +10,39 @@ html, body {
 	padding: 0;
 }
 
+#loading-message {
+	animation: loading 2s linear;
+	animation-iteration-count: infinite;
+	background-color: #fcf8e3;
+	border: 5px solid black;
+	border-radius: 10px;
+	cursor: wait;
+	font-size: 20px;
+	height: 65px;
+	left: 50%;
+	line-height: 60px;
+	position: fixed;
+	text-align: center;
+	top: 50%;
+	width: 155px;
+	z-index: 99999;
+}
+
+@keyframes loading {
+	0% {
+		background-color: #ffffff;
+	}
+	25% {
+		background-color: #fbec5d;
+	}
+	50% {
+		background-color: #ffffff;
+	}
+	75% {
+		background-color: #87ceeb;
+	}
+}
+
 #page {
 	height: 100%;
 	width: 100%;

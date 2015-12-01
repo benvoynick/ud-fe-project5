@@ -11,10 +11,11 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.3.0/knockout-min.js"></script>
 </head>
 <body>
+<div id="loading-message" data-bind="visible: !doneLoading()">Loading...</div>
 <div id="page" class="page">
 	<div class="places-ui">
-		<div class="search"><input id="search" data-bind="textInput: searchTerm" /></div>
-		<div class="places">
+		<div class="search" style="display: none;" data-bind="visible: doneLoading()"><input id="search" data-bind="textInput: searchTerm" /></div>
+		<div class="places" style="display: none;" data-bind="visible: doneLoading()">
 			<ul id="places-list" data-bind="foreach: places">
 				<li data-bind="text: placeName, visible: visible, css: {selected:selected, open:openNow}, click: $parent.selectPlace"></li>
 			</ul>
