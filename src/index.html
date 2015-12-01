@@ -18,6 +18,7 @@
 			<ul id="places-list" data-bind="foreach: places">
 				<li data-bind="text: placeName, visible: visible, css: {selected:selected, open:openNow}, click: $parent.selectPlace"></li>
 			</ul>
+			<div class="places--no-search-results" data-bind="visible: placesVisible() < 1">No results</div>
 		</div>
 	</div>
 	<div class="map" id="map"></div>

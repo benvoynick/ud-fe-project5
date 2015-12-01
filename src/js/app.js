@@ -1,6 +1,5 @@
 /* General TODOs:
  *    Implement paging of Google Place search results to show more places
- *    Add No Results message if search does not match any items
  */
 
 var model = {
@@ -111,6 +110,19 @@ var viewModel = function() {
 
 	this.initView = function() {
 		self.populatePlaces();
+		self.placesVisible = ko.computed(function() {
+			var places = self.places();
+			var visible = 0;
+			var numPlaces = places.length;
+
+			for (var p = 0; p < numPlaces; p++) {
+				if (places[p].visible()) {
+					visible++;
+				}
+			}
+
+			return visible;
+		});
 		ko.applyBindings(self);
 	};
 

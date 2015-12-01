@@ -44,6 +44,11 @@ html, body {
 	width: 100%;
 }
 
+.places--no-search-results {
+	background-color: #ffdddd;
+	padding: 5px 20px;
+}
+
 #places-list {
 	list-style-position: inside;
 	list-style-type: none;
