@@ -23,6 +23,7 @@ var model = {
 		var saveData = jQuery.extend(true, {}, this.places);
 		for (var aPlace in saveData) {
 			if (saveData.hasOwnProperty(aPlace)) {
+				// some of this data, such as longitude and latitude coordinates objects, does not save properly to localstorage
 				delete saveData[aPlace].googleData;
 			}
 		}
@@ -30,12 +31,10 @@ var model = {
 	},
 
 	addPlace: function(google_id, name, data) {
-		if (this.places[google_id] !== undefined) return false;
+		if (google_id === undefined || this.places[google_id] !== undefined || name === undefined) return false;
+
 		if (data === undefined) data = {};
-
-		if(name !== undefined) data.placeName = name;
-		else data.placeName = 'NONAME!';
-
+		data.placeName = name;
 		data.id = google_id;
 
 		this.places[google_id] = data;
@@ -67,7 +66,7 @@ var model = {
 
 		return true;
 	},
-	
+
 	checkUpdateDate: function(id, property, hours) {
 		if (hours === undefined) {
 			hours = 12;
@@ -104,6 +103,7 @@ var viewModel = function() {
 		this.searchGooglePlaces();
 	};
 
+	// Second initialization function, called once callbacks from initial google search are finished
 	this.initView = function() {
 		self.populatePlaces();
 		self.placesVisible = ko.computed(function() {
@@ -124,6 +124,7 @@ var viewModel = function() {
 		self.doneLoading(true);
 	};
 
+	// Add Knockout and Google Map variables to the initial data returned from Google Maps Places
 	this.decorateModelPlaceData = function(data) {
 		data = jQuery.extend(true, {}, data);
 
@@ -178,6 +179,7 @@ var viewModel = function() {
 		});
 
 		data.selected.subscribe(function(selected) {
+			// Google Map marker and infowindow must be updated whenever a new place is selected
 			if (selected) {
 				data.oldMapMarkerIcon = data.googleMapMarker.getIcon();
 				data.googleMapMarker.setIcon({size: new google.maps.Size(42, 42), url: 'img/marker_pin.png'});
@@ -197,19 +199,34 @@ var viewModel = function() {
 
 		return data;
 	}
+	
+	this.populatePlaces = function() {
+		var places_array = [];
+		for (var place_id in model.places) {
+			if (model.places.hasOwnProperty(place_id)) {
+				var data = this.decorateModelPlaceData(model.places[place_id]);
+				places_array.push(data);
+			}
+		}
+		self.places(places_array);
+	};
 
+	// Look up more information on a specific place from Google and Wikipedia to put in the model,
+	// and update viewModel data from model
 	this.updatePlace = function(place_id) {
 		if (model.places[place_id]) {
-			// Call for detail update(s), unless data is recently cached
-			if (self.pendingGooglePlaceRequests.indexOf(place_id) === -1 &&
-				(!model.places[place_id].googlePlaceData ||
-				 model.checkUpdateDate(place_id, 'googlePlaceData')))
+			// Request data from Google, so long as...
+			if (self.pendingGooglePlaceRequests.indexOf(place_id) === -1 &&   // ...a request is not already pending for the same place, and...
+				(!model.places[place_id].googlePlaceData ||					  // ...we haven't already cached the data...
+				 model.checkUpdateDate(place_id, 'googlePlaceData')))		  // ...or the cached data is old.
 			{
 				self.detailGooglePlace(place_id);
 			}
-			if (self.pendingWikipediaRequests.indexOf(place_id) === -1 &&
-				(!model.places[place_id].wikipediaData ||
-				 model.checkUpdateDate(place_id, 'wikipediaData')))
+
+			// Request data from Wikipedia, so long as...
+			if (self.pendingWikipediaRequests.indexOf(place_id) === -1 &&   // ...a request is not already pending for the same place, and...
+				(!model.places[place_id].wikipediaData ||					// ...we haven't already cached the data...
+				 model.checkUpdateDate(place_id, 'wikipediaData')))			// ...or the cached data is old.
 			{
 				self.pendingWikipediaRequests.push(place_id);
 				var wikipedia_url = 'https://en.wikipedia.org/w/api.php';
@@ -231,6 +248,7 @@ var viewModel = function() {
 
 		places = self.places();
 
+		// Now find where this place is stored in the viewModel...
 		for (var p = 0; p <= places.length; p++) {
 			if (p == places.length) {
 				p = false;
@@ -241,6 +259,7 @@ var viewModel = function() {
 			}
 		}
 
+		// ...and update based on the model data
 		if (p !== false) {
 			if (model.places[place_id]) {
 				var model_data = model.places[place_id];
@@ -263,17 +282,6 @@ var viewModel = function() {
 		return false;
 	}
 
-	this.populatePlaces = function() {
-		var places_array = [];
-		for (var place_id in model.places) {
-			if (model.places.hasOwnProperty(place_id)) {
-				var data = this.decorateModelPlaceData(model.places[place_id]);
-				places_array.push(data);
-			}
-		}
-		self.places(places_array);
-	};
-
 	this.parseWikipediaRequest = function(data, status, XHR, place_id) {
 		if (data.error) {
 			alert('Wikipedia error: ' + data.error.code + "\n" +
@@ -292,7 +300,7 @@ var viewModel = function() {
 			var model_data = {wikipediaData: {articles: articles, dateReceived: new Date()}};
 
 			model.updatePlace(place_id, model_data, true);
-			self.updatePlace(place_id);
+			self.updatePlace(place_id); // Run update again since we know there is new data
 		}
 
 		var pending_index = self.pendingWikipediaRequests.indexOf(place_id);
@@ -301,6 +309,7 @@ var viewModel = function() {
 	
 	this.parseGoogleDetailRequest = function(place, status, placeId) {
 		if (status == google.maps.places.PlacesServiceStatus.OK) {
+			// Keep only specific data we may want to use
 			var props_to_keep = ['place_id', 'formatted_address', 'formatted_phone_number', 'price_level', 'rating', 'url', 'website'];
 			var data = {};
 			for (var p = 0; p < props_to_keep.length; p++) {
@@ -310,7 +319,7 @@ var viewModel = function() {
 			}
 			data.dateReceived = new Date();
 			model.updatePlace(place.place_id, {googlePlaceData: data}, true);
-			self.updatePlace(placeId);
+			self.updatePlace(placeId); // Run update again since we know there is new data
 		}
 		else if (status == google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT) alert('Google maps data could not be loaded because this page has gone over its query limit. Please try again later.');
 		else if (status == google.maps.places.PlacesServiceStatus.INVALID_REQUEST) alert('ERROR: Google Maps received an invalid request.');
