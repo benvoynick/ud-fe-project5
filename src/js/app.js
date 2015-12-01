@@ -1,13 +1,6 @@
 /* General TODOs:
- *    Implement at least one other API for additional data (possibilities: Yelp, Instagram, Foursquare), including request fail handling
- *    Implement "favorite" button for places
  *    Implement paging of Google Place search results to show more places
- *    Keyboard shortcuts for search (Udacity stretch goal)
- *    Search other fields with search (Udacity stretch goal)
- *    Autocomplete for search?
- *    Minimum rating filter?
  *    Add No Results message if search does not match any items
- *    Save places to Google Maps from this page?
  */
 
 var model = {
