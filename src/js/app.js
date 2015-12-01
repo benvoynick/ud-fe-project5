@@ -1,7 +1,3 @@
-/* General TODOs:
- *    Implement paging of Google Place search results to show more places
- */
-
 var model = {
 	'googleMapSettings': {
 		centerLat: 30.287798,
@@ -92,6 +88,11 @@ var viewModel = function() {
 
 	this.doneLoading = ko.observable(false);
 	this.places = ko.observableArray();
+	this.sortedPlaces = ko.computed(function() {
+		return self.places().sort(function(left, right) {
+			return left.placeName == right.placeName ? 0 : (left.placeName < right.placeName ? -1 : 1)
+		});
+	});
 	this.selectedPlace = ko.observable(null);
 	this.searchTerm = ko.observable('');
 	this.pendingGooglePlaceRequests = [];
@@ -178,7 +179,6 @@ var viewModel = function() {
 
 		data.selected.subscribe(function(selected) {
 			if (selected) {
-				//data.googleMapMarker.setIcon({fillOpacity: 1, path: google.maps.SymbolPath.FORWARD_OPEN_ARROW});
 				data.oldMapMarkerIcon = data.googleMapMarker.getIcon();
 				data.googleMapMarker.setIcon({size: new google.maps.Size(42, 42), url: 'img/marker_pin.png'});
 				data.googleMapMarker.setAnimation(google.maps.Animation.BOUNCE);
