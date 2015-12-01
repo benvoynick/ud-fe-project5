@@ -11,5 +11,5 @@ Open index.html, either in the prod folder or the unoptimized src folder.
 Use either the text list or the map markers to look at more information about places of interest. Use the search bar at the top of the list if you know the name of the location you are searching for.
 
 ### Image credits
-Pin marker icon by [Nahas M.A.](http://nahas-pro.deviantart.com/)  return
-Blue marker icon by [Snip Master](https://www.iconfinder.com/snipicons)
+Pin marker icon by [Nahas M.A.](http://nahas-pro.deviantart.com/).
+Blue marker icon by [Snip Master](https://www.iconfinder.com/snipicons).
