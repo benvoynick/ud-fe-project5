@@ -78,7 +78,7 @@ var model = {
 		if (time_since_update > time_threshold) return true;
 		else return false;
 	}
-}
+};
 
 
 
@@ -89,7 +89,7 @@ var viewModel = function() {
 	this.places = ko.observableArray();
 	this.sortedPlaces = ko.computed(function() {
 		return self.places().sort(function(left, right) {
-			return left.placeName == right.placeName ? 0 : (left.placeName < right.placeName ? -1 : 1)
+			return left.placeName == right.placeName ? 0 : (left.placeName < right.placeName ? -1 : 1);
 		});
 	});
 	this.selectedPlace = ko.observable(null);
@@ -172,7 +172,7 @@ var viewModel = function() {
 		});
 		data.googleInfoWindow.addListener('closeclick', function(event) {
 			self.selectedPlace(null);
-		})
+		});
 
 		data.visible.subscribe(function(visibility) {
 			data.googleMapMarker.setVisible(visibility);
@@ -198,7 +198,7 @@ var viewModel = function() {
 		});
 
 		return data;
-	}
+	};
 	
 	this.populatePlaces = function() {
 		var places_array = [];
@@ -280,7 +280,7 @@ var viewModel = function() {
 		}
 
 		return false;
-	}
+	};
 
 	this.parseWikipediaRequest = function(data, status, XHR, place_id) {
 		if (data.error) {
@@ -288,12 +288,17 @@ var viewModel = function() {
 				  data.error.info);
 		}
 		else {
-			if (data.length) {
-				var names = data[1];
-				var excerpts = data[2];
-				var urls = data[3];
-			}
+			var names = [];
+			var excerpts = [];
+			var urls = [];
 			var articles = [];
+
+			if (data.length) {
+				names = data[1];
+				excerpts = data[2];
+				urls = data[3];
+			}
+
 			for (var a = 0; a < names.length && a < 3; a++) {
 				articles[a] = ({name: names[a], excerpt: excerpts[a], url: urls[a]});
 			}
@@ -305,7 +310,7 @@ var viewModel = function() {
 
 		var pending_index = self.pendingWikipediaRequests.indexOf(place_id);
 		if (pending_index > -1) self.pendingWikipediaRequests.splice(pending_index, 1);
-	}
+	};
 	
 	this.parseGoogleDetailRequest = function(place, status, placeId) {
 		if (status == google.maps.places.PlacesServiceStatus.OK) {
@@ -329,7 +334,7 @@ var viewModel = function() {
 
 		var pending_index = self.pendingGooglePlaceRequests.indexOf(placeId);
 		if (pending_index > -1) self.pendingGooglePlaceRequests.splice(pending_index, 1);
-	}
+	};
 
 	this.parseGoogleSearchResults = function(results, status, pagination) {
 		if (status == google.maps.places.PlacesServiceStatus.OK) {
@@ -382,7 +387,7 @@ var viewModel = function() {
 				self.parseGoogleDetailRequest(place, status, placeId);
 			});
 		}
-	}
+	};
 
 	this.getGoogleMapCenterCoords = function() {
 		return [model.googleMapSettings.centerLat, model.googleMapSettings.centerLng];
@@ -412,8 +417,8 @@ var viewModel = function() {
 		else {
 			self.selectedPlace(null);
 		}
-	}
-}
+	};
+};
 
 
 
