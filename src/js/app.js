@@ -99,8 +99,12 @@ var viewModel = function() {
 	});
 	this.selectedPlace = ko.observable(null);
 	this.searchTerm = ko.observable('');
-	this.pendingGooglePlaceRequests = [];
-	this.pendingWikipediaRequests = [];
+	this.pendingGooglePlaceRequests = ko.observableArray();
+	this.pendingWikipediaRequests = ko.observableArray();
+	this.loadingData = ko.computed(function() {
+		if (self.pendingGooglePlaceRequests().length + self.pendingWikipediaRequests().length > 0) return true;
+		else return false;
+	});
 
 	this.init = function() {
 		model.init();
@@ -156,7 +160,7 @@ var viewModel = function() {
 		data.wikipediaArticles = ko.observableArray();
 		data.noData = ko.computed(function() {
 			if (this.googleRating() || this.googleWebsite() || this.wikipediaArticles().length ||
-				self.pendingGooglePlaceRequests.indexOf(this.id) > -1 || self.pendingWikipediaRequests.indexOf(this.id) > -1) {
+				self.pendingGooglePlaceRequests().indexOf(this.id) > -1 || self.pendingWikipediaRequests().indexOf(this.id) > -1) {
 				return false;
 			}
 			else return true;
@@ -232,7 +236,7 @@ var viewModel = function() {
 	this.updatePlace = function(place_id) {
 		if (model.places[place_id]) {
 			// Request data from Google, so long as...
-			if (self.pendingGooglePlaceRequests.indexOf(place_id) === -1 &&   // ...a request is not already pending for the same place, and...
+			if (self.pendingGooglePlaceRequests().indexOf(place_id) === -1 &&   // ...a request is not already pending for the same place, and...
 				(!model.places[place_id].googlePlaceData ||					  // ...we haven't already cached the data...
 				 model.checkUpdateDate(place_id, 'googlePlaceData')))		  // ...or the cached data is old.
 			{
@@ -240,7 +244,7 @@ var viewModel = function() {
 			}
 
 			// Request data from Wikipedia, so long as...
-			if (self.pendingWikipediaRequests.indexOf(place_id) === -1 &&   // ...a request is not already pending for the same place, and...
+			if (self.pendingWikipediaRequests().indexOf(place_id) === -1 &&   // ...a request is not already pending for the same place, and...
 				(!model.places[place_id].wikipediaData ||					// ...we haven't already cached the data...
 				 model.checkUpdateDate(place_id, 'wikipediaData')))			// ...or the cached data is old.
 			{
@@ -256,7 +260,7 @@ var viewModel = function() {
 				}).fail(function(XHR, status, error) {
 					alert('Connection to Wikipedia failed, please try again later.');
 
-					var pending_index = self.pendingWikipediaRequests.indexOf(place_id);
+					var pending_index = self.pendingWikipediaRequests().indexOf(place_id);
 					if (pending_index > -1) self.pendingWikipediaRequests.splice(pending_index, 1);
 				});
 			}
@@ -348,7 +352,7 @@ var viewModel = function() {
 		else if (status == google.maps.places.PlacesServiceStatus.UNKNOWN_ERROR) alert('ERROR: Google Maps encountered an unknown error.');
 		else alert('ERROR: Unknown status recevied from Google Maps');
 
-		var pending_index = self.pendingGooglePlaceRequests.indexOf(placeId);
+		var pending_index = self.pendingGooglePlaceRequests().indexOf(placeId);
 		if (pending_index > -1) self.pendingGooglePlaceRequests.splice(pending_index, 1);
 	};
 
