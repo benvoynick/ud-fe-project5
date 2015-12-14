@@ -142,8 +142,9 @@ var viewModel = function() {
 			var searchTerm = self.searchTerm().toLowerCase();
 			var name = data.placeName.toLowerCase();
 
-			if (!searchTerm || data.selected()) return true;
+			if (!searchTerm) return true;
 			else if (name.indexOf(searchTerm) > -1) return true;
+			//else if (data.selected()) return true;   // Keep selected marker visible even if it does not match current search term
 			else return false;
 		});
 
@@ -187,6 +188,9 @@ var viewModel = function() {
 		});
 
 		data.visible.subscribe(function(visibility) {
+			if (!visibility && data.selected()) {
+				self.selectPlace(null);
+			}
 			data.googleMapMarker.setVisible(visibility);
 		});
 
@@ -422,7 +426,7 @@ var viewModel = function() {
 
 	this.selectPlace = function(place) {
 		currentPlace = self.selectedPlace();
-		if (currentPlace != place.id) {
+		if (place && place.id && currentPlace != place.id) {
 			self.updatePlace(place.id);
 			self.selectedPlace(place.id);
 		}
