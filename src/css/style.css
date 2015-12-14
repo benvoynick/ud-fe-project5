@@ -125,9 +125,12 @@ html, body {
 }
 
 #places-list .selected {
-	color: red;
+	color: #fff;
 	cursor: default;
 	font-weight: bold;
+}
+#places-list .selected.open {
+	color: #5c1410;
 }
 
 .map {
