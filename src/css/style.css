@@ -111,14 +111,16 @@ html, body {
 }
 
 #places-list li {
-	background-color: #fff;
-	color: #666;
+	background-color: #424242;
+	border-radius: 6px;
+	color: #009AFF;
 	cursor: pointer;
 	margin: 5px 0;
-	padding: 5px 0;
+	padding: 5px 8px;
 }
 
 #places-list .open {
+	background-color: #fff;
 	color: #000;
 }
 

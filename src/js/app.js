@@ -331,7 +331,7 @@ var viewModel = function() {
 		var pending_index = self.pendingWikipediaRequests.indexOf(place_id);
 		if (pending_index > -1) self.pendingWikipediaRequests.splice(pending_index, 1);
 	};
-	
+
 	this.parseGoogleDetailRequest = function(place, status, placeId) {
 		if (status == google.maps.places.PlacesServiceStatus.OK) {
 			// Keep only specific data we may want to use
