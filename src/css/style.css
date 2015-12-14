@@ -110,6 +110,7 @@ html, body {
 #places-list .selected {
 	color: red;
 	cursor: default;
+	font-weight: bold;
 }
 
 .map {
@@ -119,11 +120,7 @@ html, body {
 	z-index: 10;
 }
 
-@media (min-width: 700px) {
-	#page {
-
-	}
-
+@media (min-width: 700px), (min-width: 600px) and (orientation: landscape) {
 	.places-ui {
 		height: 100%;
 		width: 250px;
