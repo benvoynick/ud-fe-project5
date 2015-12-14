@@ -89,7 +89,12 @@ var viewModel = function() {
 	this.places = ko.observableArray();
 	this.sortedPlaces = ko.computed(function() {
 		return self.places().sort(function(left, right) {
-			return left.placeName == right.placeName ? 0 : (left.placeName < right.placeName ? -1 : 1);
+			if (left.openNow() == right.openNow()) {
+				return left.placeName == right.placeName ? 0 : (left.placeName < right.placeName ? -1 : 1);
+			}
+			else {
+				return left.openNow() > right.openNow() ? -1 : 1;
+			}
 		});
 	});
 	this.selectedPlace = ko.observable(null);
