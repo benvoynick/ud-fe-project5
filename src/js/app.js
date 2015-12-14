@@ -148,6 +148,13 @@ var viewModel = function() {
 		data.googleWebsite = ko.observable(false);
 		data.googleMapsURL = ko.observable(false);
 		data.wikipediaArticles = ko.observableArray();
+		data.noData = ko.computed(function() {
+			if (this.googleRating() || this.googleWebsite() || this.wikipediaArticles().length ||
+				self.pendingGooglePlaceRequests.indexOf(this.id) > -1 || self.pendingWikipediaRequests.indexOf(this.id) > -1) {
+				return false;
+			}
+			else return true;
+		}, data);
 
 		var location = data.googleData.geometry.location;
 

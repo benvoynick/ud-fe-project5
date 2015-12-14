@@ -29,6 +29,7 @@
 	<div class="gm-info-popup" data-bind="attr: {id: 'iw-' + id}">
 		<div class="gm-info-popup--title" data-bind="text: placeName"></div>
 		<div class="gm-info-popup--closed" data-bind="visible: !openNow()">Closed right now</div>
+		<div class="gm-info-popup--no-data" data-bind="visible: noData()">No data available</div>
 		<div class="gm-info-popup--google-data">
 			<a class="gm-info-popup--data website" data-bind="text: googleWebsite, attr: {href: googleWebsite}, visible: googleWebsite()" target="_blank"></a>
 			<span class="gm-info-popup--data rating" data-bind="text: 'Google Maps Rating: ' + googleRating(), visible: googleRating()"></span>

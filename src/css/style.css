@@ -145,6 +145,10 @@ html, body {
 	color: red;
 }
 
+.gm-info-popup--no-data {
+	color: orange;
+}
+
 .gm-info-popup--data {
 	display: block;
 	margin-top: 4px;
